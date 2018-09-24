@@ -9,6 +9,9 @@
 #include <algorithm>
 
 
+#define M19_VERBOSE
+
+
 namespace maniscalco 
 {
 
@@ -72,7 +75,9 @@ namespace maniscalco
         {
         public:
 
+
             context_range():read_(), write_(), begin_(), end_(){}
+
 
             context_range
             (
@@ -85,6 +90,7 @@ namespace maniscalco
                 end_(end)
             {
             }
+
 
             m19_context_array::iterator get_read() const{return read_;}
             m19_context_array::iterator get_write() const{return write_;}
@@ -101,6 +107,7 @@ namespace maniscalco
                 read_ += size;
                 return contextInfo;
             }
+
 
             void write
             (
@@ -155,6 +162,7 @@ namespace maniscalco
                 write_ = begin_;
                 read_ = begin_;
             }
+
 
             void advance_to_write_position
             (
@@ -325,9 +333,11 @@ namespace maniscalco
         contextLength.reserve(0x10001);
         currentOrder_ = 0;
         completeCount_ = 0;
+        std::size_t numContexts = 0;
 
         for (auto currentContext = contextArray_.begin(); currentContext != contextArray_.end(); )
         {
+            numContexts++;
             auto size = currentContext->get_size();
             contextLength.push_back(size);
             currentContext->set(size, m19_context_array::type::skip);
@@ -335,24 +345,17 @@ namespace maniscalco
         }
         model_next_order_contexts(runLengthArray_.begin(), contextLength);
 
+        #ifdef M19_VERBOSE
+            std::cout << "Order 0 child contexts: " << numContexts << std::endl;
+        #endif
+
         while (completeCount_ < inputSize_)
         {
             for (std::size_t i = 0; i < symbolListSize_; ++i)
                 contextStats_[symbolList_[i]].contextRange_.finalize();
             ++currentOrder_;
-/*
-for (auto i = contextArray_.begin(); i != contextArray_.end(); )
-{
-    if (i->is_skip())
-        std::cout << "[skip] ";
-    if (i->is_child())
-        std::cout << "[child] ";
-    if (i->is_end())
-        std::cout << "[end] ";
-    std::cout << i->get_size() << std::endl;
-    i += i->get_size();
-}
-*/
+
+            numContexts = 0;
             for (std::size_t i = 0; i < symbolListSize_; ++i)
             {
                 auto & contextRange = contextStats_[symbolList_[i]].contextRange_;
@@ -375,6 +378,7 @@ for (auto i = contextArray_.begin(); i != contextArray_.end(); )
                         contextLength.push_back(contextInfo.size_);
                         while (!endParentContext)
                         {
+                            numContexts++;
                             currentChildContext = contextRange.get_read();
                             contextInfo = contextRange.read();
                             endParentContext = (currentChildContext->set_type(m19_context_array::type::skip) == m19_context_array::type::context_end);
@@ -384,8 +388,12 @@ for (auto i = contextArray_.begin(); i != contextArray_.end(); )
                     }
                 }
             }
+
+            #ifdef M19_VERBOSE
+                std::cout << "Order " << currentOrder_ << " child contexts: " << numContexts << std::endl;
+            #endif
         }
-        std::cout << "max order = " << currentOrder_ << std::endl;
+
     }
 }
 
@@ -403,7 +411,7 @@ auto maniscalco::m19_encode
     auto finishClock = std::chrono::system_clock::now();
     auto elapsedClock = (finishClock - startClock);
     auto msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
-    std::cout << "model initialization time: " << msElapsed << " ms" << std::endl;
+    std::cout << "m19 - model initialization time: " << msElapsed << " ms" << std::endl;
 
     encoder.model_contexts();
     return std::vector<std::uint8_t>();

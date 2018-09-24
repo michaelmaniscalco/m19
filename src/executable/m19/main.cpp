@@ -55,14 +55,14 @@ namespace
         auto finishClock = std::chrono::system_clock::now();
         auto elapsedClock = (finishClock - startClock);
         auto msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
-        std::cout << "transform elapsed time: " << msElapsed << " ms" << std::endl;
+        std::cout << "BWT elapsed time: " << msElapsed << " ms" << std::endl;
 
         startClock = std::chrono::system_clock::now();
         maniscalco::m19_encode(begin, end, sentinelIndex);
         finishClock = std::chrono::system_clock::now();
         elapsedClock = (finishClock - startClock);
         msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
-        std::cout << "modelling elapsed time: " << msElapsed << " ms" << std::endl;
+        std::cout << "Total m19 - modelling elapsed time: " << msElapsed << " ms" << std::endl;
     }
 
 

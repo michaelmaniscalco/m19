@@ -109,47 +109,34 @@ namespace maniscalco
             }
 
 
-            void write
+            void write_child
             (
-                m19_context_array::iterator where,
-                std::uint32_t size,
-                m19_context_array::type flag
-            )
-            {
-                if (write_ < where)
-                    advance_to_write_position(where);
-                write(size, flag);
-            }
-
-
-            void write
-            (
-                std::uint32_t size,
-                m19_context_array::type flag
+                std::uint32_t size
             )
             {
                 auto existingSize = write_->get_size();
-                if (size < existingSize)
-                {
-                    auto fromType = write_->get_type();
-                    auto toType = flag;
-                    if (fromType == m19_context_array::type::context_end)
-                    {
-                        toType = m19_context_array::type::child;
-                        fromType = m19_context_array::type::context_end;
-                    }
-                    write_->set(size, toType);
-                    (write_ + size)->set(existingSize - size, fromType);
-                }
-                else
-                {
-                    auto fromType = write_->get_type();
-                    auto toType = flag;
-                    if ((fromType == m19_context_array::type::child) && (toType == m19_context_array::type::context_end))
-                        toType = m19_context_array::type::child;
-                    write_->set(size, toType);
-                }
+                auto existingContextType = write_->get_type();
+                write_->set(size, m19_context_array::type::child);
                 write_ += size;
+                if (size < existingSize)
+                    write_->set(existingSize - size, existingContextType);
+            }
+
+
+            void write_end
+            (
+                std::uint32_t size
+            )
+            {
+                auto existingSize = write_->get_size();
+                auto existingContextType = write_->get_type();
+                auto toContextType = (existingContextType == m19_context_array::type::skip) ? 
+                        m19_context_array::type::skip : (size < existingSize) ? 
+                        m19_context_array::type::child : existingContextType;
+                write_->set(size, toContextType);
+                write_ += size;
+                if (size < existingSize)
+                    write_->set(existingSize - size, existingContextType);
             }
 
 
@@ -307,7 +294,7 @@ namespace maniscalco
                         contextStats.deferred_ = (contextStats.parentCount_ - contextStats.childCount_);
                         contextStats.contextRange_.advance_to_write_position(contextArray_.begin() + symbolToIndex);
                     }
-                    contextStats.contextRange_.write(contextStats.deferred_, m19_context_array::type::child);
+                    contextStats.contextRange_.write_child(contextStats.deferred_);
                     contextStats.deferred_ = contextStats.childCount_;
                 }
                 contextStats.childCount_ = 0;
@@ -317,7 +304,7 @@ namespace maniscalco
         {
             auto & contextStats = **--parentContextSymbolListEnd;
             if (contextStats.childCount_ != contextStats.parentCount_)
-                contextStats.contextRange_.write(contextStats.deferred_, m19_context_array::type::context_end);
+                contextStats.contextRange_.write_end(contextStats.deferred_);
             contextStats.deferred_ = 0;
             contextStats.parentCount_ = 0;
         }
@@ -368,22 +355,19 @@ namespace maniscalco
                             break;
                         contextInfo = contextRange.read();
                     }
-
-                    if (contextInfo.type_ != m19_context_array::type::skip)
+                    if (contextInfo.type_ == m19_context_array::type::child)
                     {
                         auto currentChildContext = contextRange.get_read() - contextInfo.size_;
                         auto rla = runLengthArray_.begin() + (currentChildContext - contextArray_.begin());
-                        bool endParentContext = (currentChildContext->set_type(m19_context_array::type::skip) == m19_context_array::type::context_end);
                         contextLength.clear();
                         contextLength.push_back(contextInfo.size_);
-                        while (!endParentContext)
+                        while (currentChildContext->set_type(m19_context_array::type::skip) != m19_context_array::type::skip)
                         {
-                            numContexts++;
                             currentChildContext = contextRange.get_read();
                             contextInfo = contextRange.read();
-                            endParentContext = (currentChildContext->set_type(m19_context_array::type::skip) == m19_context_array::type::context_end);
                             contextLength.push_back(contextInfo.size_);
                         }
+                        numContexts += contextLength.size();
                         model_next_order_contexts(rla, contextLength);
                     }
                 }

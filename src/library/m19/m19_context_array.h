@@ -12,7 +12,7 @@ namespace maniscalco
     {
     public:
 
-        static constexpr std::uint8_t  type_bits                = 2;
+        static constexpr std::uint8_t  type_bits                = 1;
         static constexpr std::uint8_t  long_size_bits           = 1;
         static constexpr std::uint8_t  partial_long_size_bits   = 1;
         static constexpr std::uint8_t  size_bits                = (8 - long_size_bits - partial_long_size_bits - type_bits);
@@ -28,8 +28,7 @@ namespace maniscalco
         enum type : std::uint8_t
         {
             skip            = 0 << type_shift,
-            child           = 1 << type_shift,
-            context_end     = 2 << type_shift
+            child           = 1 << type_shift
         };
 
 
@@ -38,12 +37,9 @@ namespace maniscalco
         {
             entry_type();
             entry_type(entry_type const & other):value_(other.value_){}
-       //     entry_type(entry_type &&) = delete;
             entry_type & operator = (entry_type const & other){value_ = other.value_; return *this;}
-       //     entry_type & operator = (entry_type &&) = delete;
             std::uint32_t get_size() const;
             type get_type() const;
-            bool is_end() const {return (get_type() == type::context_end);}
             bool is_child() const {return (get_type() == type::child);}
             bool is_skip() const{return (get_type() == type::skip);}
             void set

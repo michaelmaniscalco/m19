@@ -34,7 +34,7 @@ maniscalco::m19_context_array::m19_context_array
     {
         if (count[i] != 0)
         {
-            data_[index].set(count[i], (i == maxSymbol) ? m19_context_array::type::context_end : m19_context_array::type::child);
+            data_[index].set(count[i], (i == maxSymbol) ? m19_context_array::type::skip : m19_context_array::type::child);
             index += count[i];
         }
     }

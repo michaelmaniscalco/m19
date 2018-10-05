@@ -8,8 +8,7 @@
 #include <chrono>
 #include <algorithm>
 
-
-#define M19_VERBOSE
+//#define M19_VERBOSE
 
 
 namespace maniscalco 
@@ -57,6 +56,7 @@ namespace maniscalco
                 contextStat.contextRange_ = context_range(currentContext, currentContext + size);
                 currentContext += size;
             }
+            rlaSentinel_ = runLengthArray_.begin() + sentinelIndex;
         }
 
         void model_contexts();
@@ -75,9 +75,7 @@ namespace maniscalco
         {
         public:
 
-
             context_range():read_(), write_(), begin_(), end_(){}
-
 
             context_range
             (
@@ -91,12 +89,10 @@ namespace maniscalco
             {
             }
 
-
             m19_context_array::iterator get_read() const{return read_;}
             m19_context_array::iterator get_write() const{return write_;}
             m19_context_array::iterator get_end() const{return end_;}
             m19_context_array::iterator get_begin() const{return begin_;}
-
 
             context_info read
             (
@@ -107,7 +103,6 @@ namespace maniscalco
                 read_ += size;
                 return contextInfo;
             }
-
 
             void write_child
             (
@@ -121,7 +116,6 @@ namespace maniscalco
                 if (size < existingSize)
                     write_->set(existingSize - size, existingContextType);
             }
-
 
             void write_end
             (
@@ -139,7 +133,6 @@ namespace maniscalco
                     write_->set(existingSize - size, existingContextType);
             }
 
-
             void finalize
             (
             )
@@ -150,41 +143,21 @@ namespace maniscalco
                 read_ = begin_;
             }
 
-
             void advance_to_write_position
             (
                 m19_context_array::iterator where
             )
             {
-                auto endSafe = std::min(where, read_);
-                if (write_ < endSafe)
+                if ((write_ != where) && (write_->is_skip()))
                 {
-                    auto skipStart = write_;
-                    while (write_ < endSafe)
-                        write_ += write_->get_size();
-                    std::uint32_t skipSize = (std::min(write_, endSafe) - skipStart);
-                    skipStart->set(skipSize, m19_context_array::type::skip);
-                    if (write_ > endSafe)
-                    {
-                        endSafe->set((write_ - endSafe), m19_context_array::type::skip);
-                        write_ = endSafe;
-                    }
+                    auto endSkip = write_;
+                    while ((endSkip < where) && (endSkip->is_skip()))
+                        endSkip += endSkip->get_size();
+                    write_->set((std::min(endSkip, where) - write_), m19_context_array::type::skip);
+                    if (endSkip > where)
+                        where->set((endSkip - where), m19_context_array::type::skip);
                 }
-
-                if ((write_ < where) && (write_->is_skip()))
-                {
-                    auto skipStart = write_;
-                    while ((write_ < where) && (write_->is_skip()))
-                        write_ += write_->get_size();
-                    skipStart->set((std::min(write_, where) - skipStart), m19_context_array::type::skip);
-                    if (write_ > where)
-                    {
-                        where->set((write_ - where), m19_context_array::type::skip);
-                        write_ = where;
-                    }
-                }
-                while (write_ < where)
-                    write_ += write_->get_size();
+                write_ = where;
             }
 
         protected:
@@ -217,27 +190,29 @@ namespace maniscalco
             std::vector<std::uint32_t> const &
         );
 
-        m19_context_array               contextArray_;
+        m19_context_array                       contextArray_;
 
-        m19_run_length_array            runLengthArray_;
+        m19_run_length_array                    runLengthArray_;
 
-        m19_suffix_index_array          symbolIndexArray_;
+        m19_run_length_array::const_iterator    rlaSentinel_;
 
-        std::uint8_t const *            input_;
+        m19_suffix_index_array                  symbolIndexArray_;
 
-        std::size_t                     inputSize_;
+        std::uint8_t const *                    input_;
 
-        std::uint32_t                   sentinelIndex_;
+        std::size_t                             inputSize_;
 
-        std::array<context_stat, 0x101> contextStats_;
+        std::uint32_t                           sentinelIndex_;
 
-        std::size_t                     currentOrder_;
+        std::array<context_stat, 0x101>         contextStats_;
 
-        std::size_t                     completeCount_;
+        std::size_t                             currentOrder_;
 
-        std::array<std::uint32_t, 0x101> symbolList_;
+        std::size_t                             completeCount_;
 
-        std::uint32_t                   symbolListSize_;
+        std::array<std::uint32_t, 0x101>        symbolList_;
+
+        std::uint32_t                           symbolListSize_;
     };
 
 
@@ -245,7 +220,7 @@ namespace maniscalco
     void m19_encoder::model_next_order_contexts
     (
         m19_run_length_array::const_iterator runLengthArrayIter,
-        std::vector<std::uint32_t> const & contextLength
+        std::vector<std::uint32_t> const & contextSizes
     )
     {
         context_stat * parentContextSymbolList[0x101];
@@ -253,36 +228,32 @@ namespace maniscalco
         context_stat * childContextSymbolList[0x101];
         context_stat ** childContextSymbolListEnd = childContextSymbolList;
 
-        auto inputIndex = (runLengthArrayIter - runLengthArray_.begin());
-        auto sentinelInput = (inputIndex > sentinelIndex_) ? nullptr : (input_ + sentinelIndex_);
-        auto input = input_ + inputIndex - (sentinelInput == nullptr);
-
-        auto maxRunLength = runLengthArrayIter->get_size();
-        for (auto contextSize : contextLength)
+        for (auto contextSize : contextSizes)
         {
             completeCount_ += (contextSize == 1);
-            while (contextSize)
+            auto endRunLengthArrayIter = (runLengthArrayIter + contextSize);
+            while (runLengthArrayIter < endRunLengthArrayIter)
             {
-                auto runLength = std::min(contextSize, maxRunLength);
-                runLengthArrayIter += runLength;
-                contextSize -= runLength;
-                if ((maxRunLength -= runLength) == 0)
-                    maxRunLength = runLengthArrayIter->get_size();
-                std::uint32_t symbol = (input == sentinelInput) ? sentinelInput = nullptr, 0 : (((std::uint32_t)*input) + 1);
-                auto & contextStats = contextStats_[symbol];
-                if (contextStats.parentCount_ < 2)
+                auto * contextStats = (contextStats_.data() + runLengthArrayIter->first);
+                contextStats += (runLengthArrayIter != rlaSentinel_);
+                if (contextStats->parentCount_ < 2)
                 {
-                    auto inputIndex = (input - input_) + (sentinelInput == nullptr);
-                    contextStats.startIndex_[contextStats.parentCount_] = inputIndex;
-                    contextStats.startIndex_[contextStats.parentCount_ + 1] = (inputIndex + 1);
+                    auto inputIndex = (runLengthArrayIter - runLengthArray_.begin());
+                    contextStats->startIndex_[contextStats->parentCount_] = inputIndex;
+                    contextStats->startIndex_[contextStats->parentCount_ + 1] = (inputIndex + 1);
                 }
-                if ((contextStats.parentCount_ += runLength) == runLength)
-                    *(parentContextSymbolListEnd++) = &contextStats;
-                if ((contextStats.childCount_ += runLength) == runLength)
-                    *(childContextSymbolListEnd++) = &contextStats;
-                input += runLength;
-                input -= (symbol == 0);
+                auto runLength = runLengthArrayIter->second;
+                if ((runLengthArrayIter += runLength) > endRunLengthArrayIter)
+                {
+                    runLength -= (runLengthArrayIter - endRunLengthArrayIter);
+                    runLengthArrayIter = endRunLengthArrayIter;
+                }
+                if ((contextStats->parentCount_ += runLength) == runLength)
+                    *(parentContextSymbolListEnd++) = contextStats;
+                if ((contextStats->childCount_ += runLength) == runLength)
+                    *(childContextSymbolListEnd++) = contextStats;
             }
+
             while (childContextSymbolListEnd != childContextSymbolList)
             {
                 auto & contextStats = **--childContextSymbolListEnd;
@@ -316,8 +287,8 @@ namespace maniscalco
     (
     )
     {
-        std::vector<std::uint32_t> contextLength;
-        contextLength.reserve(0x10001);
+        std::vector<std::uint32_t> contextSizes;
+        contextSizes.reserve(0x10001);
         currentOrder_ = 0;
         completeCount_ = 0;
         std::size_t numContexts = 0;
@@ -326,12 +297,12 @@ namespace maniscalco
         {
             numContexts++;
             auto size = currentContext->get_size();
-            contextLength.push_back(size);
+            contextSizes.push_back(size);
             currentContext->set(size, m19_context_array::type::skip);
             currentContext += size;
         }
-        model_next_order_contexts(runLengthArray_.begin(), contextLength);
-
+        model_next_order_contexts(runLengthArray_.begin(), contextSizes);
+        contextSizes.clear();
         #ifdef M19_VERBOSE
             std::cout << "Order 0 child contexts: " << numContexts << std::endl;
         #endif
@@ -359,16 +330,16 @@ namespace maniscalco
                     {
                         auto currentChildContext = contextRange.get_read() - contextInfo.size_;
                         auto rla = runLengthArray_.begin() + (currentChildContext - contextArray_.begin());
-                        contextLength.clear();
-                        contextLength.push_back(contextInfo.size_);
+                        contextSizes.push_back(contextInfo.size_);
                         while (currentChildContext->set_type(m19_context_array::type::skip) != m19_context_array::type::skip)
                         {
                             currentChildContext = contextRange.get_read();
                             contextInfo = contextRange.read();
-                            contextLength.push_back(contextInfo.size_);
+                            contextSizes.push_back(contextInfo.size_);
                         }
-                        numContexts += contextLength.size();
-                        model_next_order_contexts(rla, contextLength);
+                        numContexts += contextSizes.size();
+                        model_next_order_contexts(rla, contextSizes);
+                        contextSizes.clear();
                     }
                 }
             }

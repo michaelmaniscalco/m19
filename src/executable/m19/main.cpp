@@ -63,6 +63,7 @@ namespace
         elapsedClock = (finishClock - startClock);
         msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
         std::cout << "Total m19 - modelling elapsed time: " << msElapsed << " ms" << std::endl;
+        std::cout << "Modelling speed: " << (((long double)(end - begin) / ((long double)msElapsed / 1000)) / (1 << 20)) << " MB/sec" << std::endl;
     }
 
 

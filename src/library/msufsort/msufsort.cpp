@@ -125,7 +125,7 @@ inline auto maniscalco::msufsort::get_suffix_type
 
 
 //==============================================================================
-inline auto maniscalco::msufsort::get_value
+force_inline auto maniscalco::msufsort::get_value
 (
     uint8_t const * inputCurrent,
     suffix_index index
@@ -239,7 +239,6 @@ void maniscalco::msufsort::multikey_insertion_sort
         std::int32_t size_;
         suffix_value startingPattern_;
         suffix_value endingPattern_;
-        
         tandem_repeat_setting hasPotentialTandemRepeats_;
     };
     partition_info stack[insertion_sort_threshold];
@@ -405,11 +404,14 @@ inline void maniscalco::msufsort::complete_tandem_repeat
     std::int32_t tandemRepeatLength
 )
 {
+    static std::int32_t constexpr isa_is_tandem_repeat_length  = 0x80000000;
+    static std::int32_t constexpr isa_index_mask = ~isa_is_tandem_repeat_length;
+
     suffix_index * terminatorsBegin = partitionEnd - numTerminators;
     for (auto cur = terminatorsBegin - 1; cur >= partitionBegin; --cur)
     {
 	    auto currentSuffixIndex = (*cur & sa_index_mask);
-        inverseSuffixArrayBegin_[currentSuffixIndex >> 1] = (tandemRepeatLength | is_tandem_repeat_length);
+        inverseSuffixArrayBegin_[currentSuffixIndex >> 1] = (tandemRepeatLength | isa_is_tandem_repeat_length);
     }
     // now use sorted order of terminators to determine sorted order of repeats.
     // figure out how many terminators sort before the repeat and how
@@ -452,9 +454,9 @@ inline void maniscalco::msufsort::complete_tandem_repeat
             {
                 auto potentialTandemRepeatIndex = index - tandemRepeatLength;
                 auto isaValue = inverseSuffixArrayBegin_[potentialTandemRepeatIndex >> 1];
-                if ((isaValue & is_tandem_repeat_length) && ((isaValue & isa_index_mask) == tandemRepeatLength))
+                if ((isaValue & isa_is_tandem_repeat_length) && ((isaValue & isa_index_mask) == tandemRepeatLength))
                 {
-                    auto flag = ((potentialTandemRepeatIndex > 0) && (inputBegin_[potentialTandemRepeatIndex - 1] <= inputBegin_[potentialTandemRepeatIndex])) ? 0 : preceding_suffix_is_type_a_flag;
+                    auto flag = ((potentialTandemRepeatIndex > 0) && (inputBegin_[potentialTandemRepeatIndex - 1] <= inputBegin_[potentialTandemRepeatIndex])) ? 0 : sa_preceding_suffix_is_type_a_flag;
                     *(next) = (potentialTandemRepeatIndex | flag);
                     ++next;
                 }           
@@ -475,9 +477,9 @@ inline void maniscalco::msufsort::complete_tandem_repeat
             {
                 auto potentialTandemRepeatIndex = index - tandemRepeatLength;
                 auto isaValue = inverseSuffixArrayBegin_[potentialTandemRepeatIndex >> 1];
-                if ((isaValue & is_tandem_repeat_length) && ((isaValue & isa_index_mask) == tandemRepeatLength))
+                if ((isaValue & isa_is_tandem_repeat_length) && ((isaValue & isa_index_mask) == tandemRepeatLength))
                 {     
-                    auto flag = ((potentialTandemRepeatIndex > 0) && (inputBegin_[potentialTandemRepeatIndex - 1] <= inputBegin_[potentialTandemRepeatIndex])) ? 0 : preceding_suffix_is_type_a_flag;
+                    auto flag = ((potentialTandemRepeatIndex > 0) && (inputBegin_[potentialTandemRepeatIndex - 1] <= inputBegin_[potentialTandemRepeatIndex])) ? 0 : sa_preceding_suffix_is_type_a_flag;
                     *(next) = (potentialTandemRepeatIndex | flag);
                     --next;
                 }           
@@ -757,7 +759,7 @@ void maniscalco::msufsort::second_stage_its_right_to_left_pass_multi_threaded
             if (maxEnd < endSuffix)
                 maxEnd = endSuffix;
             auto temp = currentSuffix;
-            while ((temp > maxEnd) && (*temp != suffix_is_unsorted_b_type))
+            while ((temp > maxEnd) && (*temp != sa_suffix_is_unsorted_b_type))
                 --temp;
             auto totalSuffixesPerThread = ((std::distance(temp, currentSuffix) + numThreads - 1) / numThreads);
 
@@ -786,12 +788,12 @@ void maniscalco::msufsort::second_stage_its_right_to_left_pass_multi_threaded
                         int32_t currentPrecedingSymbolCount = 0;
                         while (--begin > end)
                         {
-                            if ((*begin & preceding_suffix_is_type_a_flag) == 0)
+                            if ((*begin & sa_preceding_suffix_is_type_a_flag) == 0)
                             {
                                 int32_t precedingSuffixIndex = ((*begin & sa_index_mask) - 1);
                                 auto precedingSuffix = (inputBegin + precedingSuffixIndex);
                                 auto precedingSymbol = precedingSuffix[0];
-                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : preceding_suffix_is_type_a_flag;
+                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : sa_preceding_suffix_is_type_a_flag;
                                 *curCache++ = {precedingSymbol, precedingSuffixIndex | flag};
                                 if (precedingSymbol != currentPrecedingSymbol)
                                 {
@@ -879,12 +881,12 @@ void maniscalco::msufsort::second_stage_its_right_to_left_pass_single_threaded
         auto endSuffix = currentSuffix - bCount_[i];
         while (currentSuffix > endSuffix)
         {
-            if ((*currentSuffix & preceding_suffix_is_type_a_flag) == 0)
+            if ((*currentSuffix & sa_preceding_suffix_is_type_a_flag) == 0)
             {
                 int32_t precedingSuffixIndex = ((*currentSuffix & sa_index_mask) - 1);
                 auto precedingSuffix = (inputBegin_ + precedingSuffixIndex);
                 auto precedingSymbol = precedingSuffix[0];
-                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : preceding_suffix_is_type_a_flag;
+                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : sa_preceding_suffix_is_type_a_flag;
                 if (precedingSymbol != previousPrecedingSymbol)
                 {
                     previousPrecedingSymbol = precedingSymbol;
@@ -913,14 +915,14 @@ void maniscalco::msufsort::second_stage_its_left_to_right_pass_single_threaded
     while (++currentSuffix < suffixArrayEnd_)
     {
         auto currentSuffixIndex = *currentSuffix;
-        if (currentSuffixIndex & preceding_suffix_is_type_a_flag)
+        if (currentSuffixIndex & sa_preceding_suffix_is_type_a_flag)
         {
             if ((currentSuffixIndex & sa_index_mask) != 0)
             {
                 int32_t precedingSuffixIndex = ((currentSuffixIndex & sa_index_mask) - 1);
                 auto precedingSuffix = (inputBegin_ + precedingSuffixIndex);
                 auto precedingSymbol = precedingSuffix[0];
-                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? preceding_suffix_is_type_a_flag : 0;
+                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? sa_preceding_suffix_is_type_a_flag : 0;
                 if (precedingSymbol != previousPrecedingSymbol)
                 {
                     previousPrecedingSymbol = precedingSymbol;
@@ -960,7 +962,7 @@ void maniscalco::msufsort::second_stage_its_left_to_right_pass_multi_threaded
     while (currentSuffix < suffixArrayEnd_)
     {
         // calculate current 'safe' suffixes to process
-        while ((currentSuffix < suffixArrayEnd_) && (!(*currentSuffix & preceding_suffix_is_type_a_flag)))
+        while ((currentSuffix < suffixArrayEnd_) && (!(*currentSuffix & sa_preceding_suffix_is_type_a_flag)))
             ++currentSuffix;
         if (currentSuffix >= suffixArrayEnd_)
             break;
@@ -1003,7 +1005,7 @@ void maniscalco::msufsort::second_stage_its_left_to_right_pass_multi_threaded
                     while (++current != end)
                     {
                         auto currentSuffixIndex = *current;
-                        if (currentSuffixIndex & preceding_suffix_is_type_a_flag)
+                        if (currentSuffixIndex & sa_preceding_suffix_is_type_a_flag)
                         {
                             currentSuffixIndex &= sa_index_mask;
                             if (currentSuffixIndex != 0)
@@ -1011,7 +1013,7 @@ void maniscalco::msufsort::second_stage_its_left_to_right_pass_multi_threaded
                                 int32_t precedingSuffixIndex = (currentSuffixIndex - 1);
                                 auto precedingSuffix = (inputBegin + precedingSuffixIndex);
                                 auto precedingSymbol = precedingSuffix[0];
-                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? preceding_suffix_is_type_a_flag : 0;
+                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? sa_preceding_suffix_is_type_a_flag : 0;
                                 *curCache++ = {precedingSymbol, precedingSuffixIndex | flag};
                                 if (precedingSymbol != currentPrecedingSymbol)
                                 {
@@ -1140,9 +1142,9 @@ void maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_right_t
             int32_t precedingSuffixIndex = ((*currentSuffix & sa_index_mask) - 1);
             auto precedingSuffix = (inputBegin_ + precedingSuffixIndex);
             auto precedingSymbol = precedingSuffix[0];
-            if ((*currentSuffix & preceding_suffix_is_type_a_flag) == 0)
+            if ((*currentSuffix & sa_preceding_suffix_is_type_a_flag) == 0)
             {
-                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : preceding_suffix_is_type_a_flag;
+                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : sa_preceding_suffix_is_type_a_flag;
                 if (precedingSymbol != previousPrecedingSymbol)
                 {
                     previousPrecedingSymbol = precedingSymbol;
@@ -1196,7 +1198,7 @@ void maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_right_t
             if (maxEnd < endSuffix)
                 maxEnd = endSuffix;
             auto temp = currentSuffix;
-            while ((temp > maxEnd) && (*temp != suffix_is_unsorted_b_type))
+            while ((temp > maxEnd) && (*temp != sa_suffix_is_unsorted_b_type))
                 --temp;
             auto totalSuffixesPerThread = ((std::distance(temp, currentSuffix) + numThreads - 1) / numThreads);
 
@@ -1226,12 +1228,12 @@ void maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_right_t
                         while (--begin > end)
                         {
                             auto currentSuffixIndex = *begin;
-                            if ((currentSuffixIndex & preceding_suffix_is_type_a_flag) == 0)
+                            if ((currentSuffixIndex & sa_preceding_suffix_is_type_a_flag) == 0)
                             {
                                 int32_t precedingSuffixIndex = ((currentSuffixIndex & sa_index_mask) - 1);
                                 auto precedingSuffix = (inputBegin + precedingSuffixIndex);
                                 auto precedingSymbol = precedingSuffix[0];
-                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : preceding_suffix_is_type_a_flag;
+                                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] <= precedingSymbol)) ? 0 : sa_preceding_suffix_is_type_a_flag;
                                 *curCache++ = {precedingSymbol, precedingSuffixIndex | flag};
                                 if (precedingSymbol != currentPrecedingSymbol)
                                 {
@@ -1317,14 +1319,14 @@ int32_t maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_left
     while (++currentSuffix < suffixArrayEnd_)
     {
         auto currentSuffixIndex = *currentSuffix;
-        if (currentSuffixIndex & preceding_suffix_is_type_a_flag)
+        if (currentSuffixIndex & sa_preceding_suffix_is_type_a_flag)
         {
             int32_t precedingSuffixIndex = ((currentSuffixIndex & sa_index_mask) - 1);
             auto precedingSuffix = (inputBegin_ + precedingSuffixIndex);
             if ((currentSuffixIndex & sa_index_mask) != 0)
             {
                 auto precedingSymbol = precedingSuffix[0];
-                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? preceding_suffix_is_type_a_flag : 0;
+                int32_t flag = ((precedingSuffixIndex > 0) && (precedingSuffix[-1] >= precedingSymbol)) ? sa_preceding_suffix_is_type_a_flag : 0;
                 if (precedingSymbol != previousPrecedingSymbol)
                 {
                     previousPrecedingSymbol = precedingSymbol;
@@ -1333,7 +1335,7 @@ int32_t maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_left
                 if (flag)
                     *((*previousFrontBucketOffset)++) = (precedingSuffixIndex | flag);
                 else
-                    *((*previousFrontBucketOffset)++) = ((precedingSuffixIndex > 0) ? precedingSuffix[-1] : preceding_suffix_is_type_a_flag);
+                    *((*previousFrontBucketOffset)++) = ((precedingSuffixIndex > 0) ? precedingSuffix[-1] : sa_preceding_suffix_is_type_a_flag);
             }
             if (precedingSuffixIndex >= 0)
                 *currentSuffix = *precedingSuffix;
@@ -1411,7 +1413,7 @@ int32_t maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_left
                     while (++current != end)
                     {
                         auto currentSuffixIndex = *current;
-                        if (currentSuffixIndex & preceding_suffix_is_type_a_flag)
+                        if (currentSuffixIndex & sa_preceding_suffix_is_type_a_flag)
                         {
                             int32_t precedingSuffixIndex = ((currentSuffixIndex & sa_index_mask) - 1);
                             auto precedingSuffix = (inputBegin + precedingSuffixIndex);
@@ -1419,7 +1421,7 @@ int32_t maniscalco::msufsort::second_stage_its_as_burrows_wheeler_transform_left
                             {
                                 auto precedingSymbol = precedingSuffix[0];
                                 bool precedingSuffixIsTypeA = ((precedingSuffixIndex == 0) || (precedingSuffix[-1] >= precedingSymbol));
-                                int32_t flag = (precedingSuffixIsTypeA) ? preceding_suffix_is_type_a_flag : 0;
+                                int32_t flag = (precedingSuffixIsTypeA) ? sa_preceding_suffix_is_type_a_flag : 0;
                                 if (flag)
                                     *curCache++ = {precedingSymbol, precedingSuffixIndex | flag};
                                 else
@@ -1590,7 +1592,7 @@ void maniscalco::msufsort::initial_two_byte_radix_sort
     {
         if ((state & 0x03) == 2)
         {
-            int32_t flag = ((current > inputBegin_) && (current[-1] <= current[0])) ? 0 : preceding_suffix_is_type_a_flag;
+            int32_t flag = ((current > inputBegin_) && (current[-1] <= current[0])) ? 0 : sa_preceding_suffix_is_type_a_flag;
             suffixArrayBegin_[bStarOffset[endian_swap<host_order_type, big_endian_type>(*(uint16_t const *)current)]++] = 
                         (std::distance(inputBegin_, current) | flag);
         }
@@ -1760,13 +1762,13 @@ void maniscalco::msufsort::first_stage_its
             for (auto j = totalBStarCount[i] - 1; j >= 0; --j)
                 destination[j] = source[j];
             for (auto j = totalBStarCount[i]; j < bCount[i]; ++j)
-                destination[j] = suffix_is_unsorted_b_type;
+                destination[j] = sa_suffix_is_unsorted_b_type;
             destination -= aCount[i];
             for (auto j = 0; j < aCount[i]; ++j)
-                destination[j] = preceding_suffix_is_type_a_flag;
+                destination[j] = sa_preceding_suffix_is_type_a_flag;
         }
     }
-    suffixArrayBegin_[0] = (inputSize_ | preceding_suffix_is_type_a_flag); // sa[0] = sentinel
+    suffixArrayBegin_[0] = (inputSize_ | sa_preceding_suffix_is_type_a_flag); // sa[0] = sentinel
 
     finish = std::chrono::system_clock::now();
     #ifdef VERBOSE

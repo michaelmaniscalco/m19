@@ -23,7 +23,9 @@ target_specific_configurations = []
 
 target_source_files = [
         './m19.cpp',
+        './m19_encoder.cpp',
         './m19_context_array.cpp',
+        './m03_context_array.cpp',
         './m19_run_length_array.cpp',
         './m19_suffix_index_array.cpp']
 

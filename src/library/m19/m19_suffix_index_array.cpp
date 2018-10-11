@@ -13,39 +13,34 @@ maniscalco::m19_suffix_index_array::m19_suffix_index_array
 {
     std::uint8_t const * sentinel = begin + sentinelIndex;
 
-    std::int32_t index[0x100] = {};
-    auto cur = begin - 1;
-    while (++cur != end)
-        ++index[*cur];
-    std::int32_t total = 1;
-    for (auto & e : index)
-    {
-        auto temp = e;
-        e = total;
-        total += temp;
-    }
+    std::uint32_t index[0x100] = {};
     auto curData = data_.get();
-    cur = begin - 1;
-    std::int32_t count[0x100] = {};
+    auto cur = begin - 1;
+    while (++cur < sentinel)
+    {
+        auto symbol = *cur;
+        auto n = index[symbol]++;
+        std::int32_t b = ((n & 1) == 0);
+        std::int32_t shiftMask = -b;
+        n >>= (15 & shiftMask);
+        n &= 0x7fff;
+        n |= (b << 15);
+        *curData++ = n;
+    }
+
+    *curData++ = 0x8000; // sentinel index
+    --cur;
+
     while (++cur < end)
     {
-        if (cur == sentinel)
-        {
-            *curData++ = 0x8000; // sentinel index
-            --cur;
-            sentinel = nullptr;
-        }
-        else
-        {
-            auto symbol = *cur;
-            auto n = index[symbol]++;
-            auto c = count[symbol]++;
-            std::int32_t shiftMask = -((c & 0x01) == 0);
-            n >>= (15 & shiftMask);
-            n &= 0x7fff;
-            n |= (((c & 0x01) == 0) << 15);
-            *curData++ = n;
-        }
+        auto symbol = *cur;
+        auto n = index[symbol]++;
+        std::int32_t b = ((n & 1) == 0);
+        std::int32_t shiftMask = -b;
+        n >>= (15 & shiftMask);
+        n &= 0x7fff;
+        n |= (b << 15);
+        *curData++ = n;
     }
 }
 

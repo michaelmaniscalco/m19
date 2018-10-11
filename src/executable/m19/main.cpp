@@ -1,5 +1,4 @@
 #include <library/m19.h>
-#include <library/msufsort.h>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -46,24 +45,16 @@ namespace
     (
         std::uint8_t const * begin,
         std::uint8_t const * end,
-        char const * outputPath,
-        std::uint32_t numThreads
+        std::uint32_t numThreads,
+        maniscalco::parsing_method parsingMethod
     )
     {
         auto startClock = std::chrono::system_clock::now();
-        auto sentinelIndex = maniscalco::forward_burrows_wheeler_transform(begin, end, numThreads);
+        maniscalco::m19_encode(begin, end, numThreads, parsingMethod);
         auto finishClock = std::chrono::system_clock::now();
         auto elapsedClock = (finishClock - startClock);
         auto msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
-        std::cout << "BWT elapsed time: " << msElapsed << " ms" << std::endl;
-
-        startClock = std::chrono::system_clock::now();
-        maniscalco::m19_encode(begin, end, sentinelIndex);
-        finishClock = std::chrono::system_clock::now();
-        elapsedClock = (finishClock - startClock);
-        msElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedClock).count();
-        std::cout << "Total m19 - modelling elapsed time: " << msElapsed << " ms" << std::endl;
-        std::cout << "Modelling speed: " << (((long double)(end - begin) / ((long double)msElapsed / 1000)) / (1 << 20)) << " MB/sec" << std::endl;
+        std::cout << "elapsed time: " << msElapsed << " ms, " << (((long double)(end - begin) / ((long double)msElapsed / 1000)) / (1 << 20)) << " MB/sec" << std::endl;
     }
 
 
@@ -84,6 +75,7 @@ namespace
     )
     {
         std::cout << "m19 - next generation BWT compressor.  Author: M.A. Maniscalco (2018 - 2019)" << std::endl;
+        std::cout << "*** This build is pre-alpha and demonstrates both M19 and M03 context parsing only ***" << std::endl;
     }
 
 
@@ -92,7 +84,9 @@ namespace
     (
     )
     {
-        std::cout << "Usage: m19 [e|d] inputFile outputFile threadCount" << std::endl;
+        std::cout << "Usage: m19 [3|9] inputFile threadCount" << std::endl;
+        std::cout << "\t3 = use M03 context modelling" << std::endl;
+        std::cout << "\t9 = use M19 context modelling" << std::endl;
         return 0;
     }
 }
@@ -107,15 +101,15 @@ std::int32_t main
 {
     print_about();
 
-    if ((argCount < 4) || (strlen(argValue[1]) != 1))
+    if ((argCount < 3) || (strlen(argValue[1]) != 1))
         return print_usage();
 
     std::size_t numThreads = 0;
-    if (argCount == 5)
+    if (argCount == 4)
     {
         // optional args added
         numThreads = 0;
-        auto cur = argValue[4];
+        auto cur = argValue[3];
         while (*cur != 0)
         {
             if ((*cur < '0') || (*cur > '9'))
@@ -129,22 +123,24 @@ std::int32_t main
             ++cur;
         }
     }
-    if ((numThreads == 0))// || (numThreads > std::thread::hardware_concurrency()))
+    if (numThreads == 0)
         numThreads = std::thread::hardware_concurrency();
 
     switch (argValue[1][0])
     {
-        case 'e':
+        case '9':
         {
             auto input = load_file(argValue[2]);
-            encode((std::uint8_t const *)input.data(), (std::uint8_t const *)input.data() + input.size(), argValue[3], numThreads);
+            encode((std::uint8_t const *)input.data(), (std::uint8_t const *)input.data() + input.size(), 
+                    numThreads, maniscalco::parsing_method::m19);
             break;
         }
 
-        case 'd':
+        case '3':
         {
             auto input = load_file(argValue[2]);
-            decode((std::uint8_t const *)input.data(), argValue[3], numThreads);
+            encode((std::uint8_t const *)input.data(), (std::uint8_t const *)input.data() + input.size(), 
+                    numThreads, maniscalco::parsing_method::m03);
             break;
         }
 

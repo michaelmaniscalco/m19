@@ -1,77 +1,80 @@
-#include "./m19_context_array.h"
+#include "./m03_context_array.h"
 
 
 //==============================================================================
-maniscalco::m19_context_array::entry_type::entry_type
+maniscalco::m03_context_array::entry_type::entry_type
 (
 ):
     value_(0)
 {
-    set(1, type::skip);
 }
 
 
 //==============================================================================
-maniscalco::m19_context_array::m19_context_array
+maniscalco::m03_context_array::m03_context_array
 (
 ):
     size_(),
     data_(),
+    endData_(),
     startingIndex_(),
+    writeIndex_(),
     read_(), 
-    write_(), 
-    begin_(), 
-    end_()
+    write_(),
+    readEnd_()
 {
 }
 
 
 //==============================================================================
-maniscalco::m19_context_array::m19_context_array
+maniscalco::m03_context_array::m03_context_array
 (
     std::size_t size,
     std::uint32_t startingIndex
 ):
     size_(size),
-    data_(new entry_type[size_]),
+    data_(new entry_type[size_ + 1024 + 8]),
+    endData_(data_.get() + size_ + 1024),
     startingIndex_(startingIndex),
+    writeIndex_(0),
     read_(data_.get()), 
-    write_(data_.get()), 
-    begin_(data_.get()), 
-    end_(data_.get() + size_)
+    write_(read_),
+    readEnd_(read_)
 {
 }
 
 
 //==============================================================================
-maniscalco::m19_context_array::m19_context_array
+maniscalco::m03_context_array::m03_context_array
 (
-    m19_context_array && other
+    m03_context_array && other
 ):
     size_(other.size_),
     data_(std::move(other.data_)),
+    endData_(other.endData_),
     startingIndex_(other.startingIndex_),
+    writeIndex_(other.writeIndex_),
     read_(other.read_), 
-    write_(other.write_), 
-    begin_(other.begin_), 
-    end_(other.end_)
+    write_(other.write_),
+    readEnd_(other.read_)
 {
 }
 
 
 //==============================================================================
-auto maniscalco::m19_context_array::operator =
+auto maniscalco::m03_context_array::operator =
 (
-    m19_context_array && other
-) -> m19_context_array &
+    m03_context_array && other
+) -> m03_context_array &
 {
     size_ = other.size_;
     data_ = std::move(other.data_);
+    endData_ = other.endData_;
     startingIndex_ = other.startingIndex_;
+    writeIndex_ = other.writeIndex_;
     read_ = other.read_; 
-    write_ = other.write_; 
-    begin_ = other.begin_; 
-    end_ = other.end_;
+    write_ = other.write_;
+    readEnd_ = other.readEnd_;
     return *this;
 }
 

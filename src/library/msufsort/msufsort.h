@@ -23,8 +23,6 @@ SOFTWARE.
 */
 
 
-
-
 #pragma once
 
 #include <vector>
@@ -77,18 +75,18 @@ namespace maniscalco
     private:
 
         using suffix_value = std::uint32_t;
-
+/*
         // flags used in ISA
         static std::int32_t constexpr is_induced_sort = 0x40000000;
         static std::int32_t constexpr is_tandem_repeat_length  = 0x80000000;
         static std::int32_t constexpr isa_flag_mask = is_induced_sort | is_tandem_repeat_length;  
         static std::int32_t constexpr isa_index_mask = ~isa_flag_mask;
-
+*/
         // flags used in SA
-        static std::int32_t constexpr preceding_suffix_is_type_a_flag = 0x80000000;
-        static std::int32_t constexpr mark_isa_when_sorted = 0x40000000;
-        static std::int32_t constexpr sa_index_mask = ~(preceding_suffix_is_type_a_flag | mark_isa_when_sorted);
-        static std::int32_t constexpr suffix_is_unsorted_b_type = sa_index_mask;
+        static std::int32_t constexpr sa_preceding_suffix_is_type_a_flag = 0x80000000;
+     //   static std::int32_t constexpr mark_isa_when_sorted = 0x40000000;
+        static std::int32_t constexpr sa_index_mask = ~(sa_preceding_suffix_is_type_a_flag);// | mark_isa_when_sorted);
+        static std::int32_t constexpr sa_suffix_is_unsorted_b_type = sa_index_mask;
 
         static constexpr int32_t insertion_sort_threshold = 16;
 

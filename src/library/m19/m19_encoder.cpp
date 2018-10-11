@@ -157,8 +157,6 @@ void maniscalco::m19_encoder<context_array_type>::model_contexts
             while (!contextArray.empty())
             {
                 auto value = contextArray.pop();
-if (value.second <= 0)
-    int y = 9;
                 if (value.first == context_array_type::type::child)
                 {
                     auto r = rla;
@@ -175,11 +173,6 @@ if (value.second <= 0)
                 }
                 rla += value.second;
             }
-        }
-        if (numContexts == 0)
-        {
-            std::cout << "logic error" << std::endl;
-            throw 0;
         }
         std::cout << "[processing order " << currentOrder_ << " contexts ...]" << (char)13 << std::flush;
     }

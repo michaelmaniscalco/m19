@@ -2,16 +2,17 @@
 
 
 //==============================================================================
-maniscalco::m19_suffix_index_array::m19_suffix_index_array
+template <typename symbol_type>
+maniscalco::m19_suffix_index_array<symbol_type>::m19_suffix_index_array
 (
-    std::uint8_t const * begin,
-    std::uint8_t const * end,
+    symbol_type const * begin,
+    symbol_type const * end,
     std::size_t sentinelIndex
 ):
     size_(std::distance(begin, end) + 1),
     data_(new std::uint16_t[size_])
 {
-    std::uint8_t const * sentinel = begin + sentinelIndex;
+    symbol_type const * sentinel = begin + sentinelIndex;
 
     std::uint32_t index[0x100] = {};
     auto curData = data_.get();
@@ -44,3 +45,9 @@ maniscalco::m19_suffix_index_array::m19_suffix_index_array
     }
 }
 
+
+namespace maniscalco
+{
+    template class m19_suffix_index_array<std::uint8_t>;
+    template class m19_suffix_index_array<std::uint16_t>;
+}

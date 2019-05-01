@@ -8,14 +8,15 @@ namespace maniscalco
 {
 
     //==========================================================================
+    template <typename symbol_type>
     class m19_suffix_index_array
     {
     public:
-
+        
         m19_suffix_index_array
         (
-            std::uint8_t const *,
-            std::uint8_t const *,
+            symbol_type const *,
+            symbol_type const *,
             std::size_t
         );
 
@@ -38,7 +39,8 @@ namespace maniscalco
 
 
 //==============================================================================
-inline std::uint32_t maniscalco::m19_suffix_index_array::operator []
+template <typename symbol_type>
+inline std::uint32_t maniscalco::m19_suffix_index_array<symbol_type>::operator []
 (
     std::pair<std::uint32_t, std::uint32_t> index
 ) const

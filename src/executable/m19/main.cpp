@@ -11,6 +11,8 @@
 
 //#define VERBOSE_MAIN
 
+//#define TEST_16_BIT_SYMBOLS   // treat BWT output as 16 bit symbols
+
 
 namespace
 {

@@ -3,10 +3,11 @@
 
 
 //==============================================================================
-maniscalco::m19_run_length_array::m19_run_length_array
+template <typename symbol_type>
+maniscalco::m19_run_length_array<symbol_type>::m19_run_length_array
 (
-    std::uint8_t const * begin,
-    std::uint8_t const * end,
+    symbol_type const * begin,
+    symbol_type const * end,
     std::size_t sentinelIndex
 ):
     size_(std::distance(begin, end) + 1),
@@ -41,3 +42,11 @@ maniscalco::m19_run_length_array::m19_run_length_array
     }
 }
 
+
+namespace maniscalco
+{
+    template class m19_run_length_array<std::uint8_t>;
+    template class m19_run_length_array<std::uint16_t>;
+}
+
+    

@@ -5,8 +5,8 @@
 template <typename context_array_type>
 maniscalco::m19_encoder<context_array_type>::m19_encoder
 (
-    std::uint8_t const * inputBegin,
-    std::uint8_t const * inputEnd,
+    symbol_type const * inputBegin,
+    symbol_type const * inputEnd,
     std::uint32_t sentinelIndex
 ):
     runLengthArray_(inputBegin, inputEnd, sentinelIndex),
@@ -48,7 +48,7 @@ maniscalco::m19_encoder<context_array_type>::m19_encoder
 template <typename context_array_type>
 void maniscalco::m19_encoder<context_array_type>::model_next_order_contexts
 (
-    m19_run_length_array::const_iterator runLengthArrayIter,
+    m19_run_length_array<symbol_type>::const_iterator runLengthArrayIter,
     std::vector<std::uint32_t> const & contextSizes
 )
 {

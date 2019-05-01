@@ -8,6 +8,7 @@ namespace maniscalco
 {
 
     //==========================================================================
+    template <typename symbol_type>
     class m19_run_length_array
     {
     public:
@@ -18,8 +19,8 @@ namespace maniscalco
 
         m19_run_length_array
         (
-            std::uint8_t const *,
-            std::uint8_t const *,
+            symbol_type const *,
+            symbol_type const *,
             std::size_t
         );
 
@@ -55,7 +56,8 @@ namespace maniscalco
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::begin
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::begin
 (
 ) -> iterator
 {
@@ -64,7 +66,8 @@ inline auto maniscalco::m19_run_length_array::begin
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::end
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::end
 (
 ) -> iterator
 {
@@ -73,7 +76,8 @@ inline auto maniscalco::m19_run_length_array::end
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::begin
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::begin
 (
 ) const -> const_iterator
 {
@@ -82,7 +86,8 @@ inline auto maniscalco::m19_run_length_array::begin
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::end
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::end
 (
 ) const -> const_iterator
 {
@@ -91,7 +96,8 @@ inline auto maniscalco::m19_run_length_array::end
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::operator []
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::operator []
 (
     std::size_t index
 ) -> element_type &
@@ -101,7 +107,8 @@ inline auto maniscalco::m19_run_length_array::operator []
 
 
 //==============================================================================
-inline auto maniscalco::m19_run_length_array::operator []
+template <typename symbol_type>
+inline auto maniscalco::m19_run_length_array<symbol_type>::operator []
 (
     std::size_t index
 ) const -> element_type

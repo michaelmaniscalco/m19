@@ -21,10 +21,12 @@ namespace maniscalco
     {
     public:
 
+        using symbol_type = std::uint8_t;
+
         m19_encoder
         (
-            std::uint8_t const *,
-            std::uint8_t const *,
+            symbol_type const *,
+            symbol_type const *,
             std::uint32_t
         );
 
@@ -46,17 +48,17 @@ namespace maniscalco
 
         void model_next_order_contexts
         (
-            m19_run_length_array::const_iterator,
+            m19_run_length_array<symbol_type>::const_iterator,
             std::vector<std::uint32_t> const &
         );
 
-        m19_run_length_array                    runLengthArray_;
+        m19_run_length_array<symbol_type>       runLengthArray_;
 
-        m19_run_length_array::const_iterator    rlaSentinel_;
+        m19_run_length_array<symbol_type>::const_iterator    rlaSentinel_;
 
-        m19_suffix_index_array                  symbolIndexArray_;
+        m19_suffix_index_array<symbol_type>                  symbolIndexArray_;
 
-        std::uint8_t const *                    input_;
+        symbol_type const *                     input_;
 
         std::size_t                             inputSize_;
 

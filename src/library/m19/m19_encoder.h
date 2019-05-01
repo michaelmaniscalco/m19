@@ -21,8 +21,12 @@ namespace maniscalco
     {
     public:
 
-        using symbol_type = std::uint8_t;
-
+        #ifdef TEST_16_BIT_SYMBOLS
+            using symbol_type = std::uint16_t;
+        #else
+            using symbol_type = std::uint8_t;
+        #endif
+        
         m19_encoder
         (
             symbol_type const *,
